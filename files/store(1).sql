@@ -19,7 +19,7 @@ CREATE TABLE employees (
  surname  VARCHAR(10),
  job    VARCHAR(10),
  managerid INTEGER,
- startdate DATE      ,
+ startdate DATE,
  salary   DECIMAL(6,2),
  commission  DECIMAL(6,2),
  depid   INTEGER NOT NULL,
