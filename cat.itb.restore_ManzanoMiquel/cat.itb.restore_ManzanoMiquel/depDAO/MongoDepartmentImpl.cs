@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using cat.itb.gestioHR.connections;
+﻿using cat.itb.restore_ManzanoMiquel.connections;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 
@@ -40,9 +38,9 @@ namespace cat.itb.gestioHR.depDAO
         public List<Department> SelectAll()
         {
             var database = MongoConnection.GetDatabase("itb");
-            var booksCollection = database.GetCollection<Department>("departments");
+            var collection = database.GetCollection<Department>("departments");
 
-            var deps = booksCollection.AsQueryable<Department>().ToList();
+            var deps = collection.AsQueryable<Department>().ToList();
 
             return deps;
         }

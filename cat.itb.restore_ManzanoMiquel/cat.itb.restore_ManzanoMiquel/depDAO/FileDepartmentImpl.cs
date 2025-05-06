@@ -14,7 +14,7 @@ namespace cat.itb.gestioHR.depDAO
 
         public void InsertAll(List<Department> deps)
         {
-            FileInfo file = new FileInfo("../../../../departments.json");
+            FileInfo file = new FileInfo("../../../../files/departments.json");
             StreamWriter sw = file.CreateText();
             try
             {
@@ -34,7 +34,7 @@ namespace cat.itb.gestioHR.depDAO
 
         public List<Department> SelectAll()
         {
-            FileInfo file = new FileInfo("../../../../departments.json");
+            FileInfo file = new FileInfo("../../../../files/departments.json");
             StreamReader sr = file.OpenText();
             string dept;
             List<Department> list = new List<Department>();
