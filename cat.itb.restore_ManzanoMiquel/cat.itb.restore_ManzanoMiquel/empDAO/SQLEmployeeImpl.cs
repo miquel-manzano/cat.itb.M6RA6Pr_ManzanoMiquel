@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace cat.itb.restore_ManzanoMiquel.empDAO
 {
-    class SQLEmployeeImpl
+    public class SQLEmployeeImpl
     {
     }
 }

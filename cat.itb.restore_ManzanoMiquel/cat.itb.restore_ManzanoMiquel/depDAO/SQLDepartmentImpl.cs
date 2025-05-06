@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using cat.itb.gestioHR.connections;
+﻿using cat.itb.restore_ManzanoMiquel.connections;
 using Npgsql;
 
 namespace cat.itb.gestioHR.depDAO
@@ -32,7 +30,7 @@ namespace cat.itb.gestioHR.depDAO
             conn.Close();
          
         }
-        
+
         public void InsertAll(List<Department> deps)
         {
             DeleteAll();
