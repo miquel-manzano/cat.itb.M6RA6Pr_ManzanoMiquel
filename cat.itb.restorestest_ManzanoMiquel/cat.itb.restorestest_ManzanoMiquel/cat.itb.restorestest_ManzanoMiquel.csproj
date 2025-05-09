@@ -7,4 +7,14 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="MongoDB.Driver" Version="3.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="cat.itb.restore_ManzanoMiquel">
+      <HintPath>..\..\cat.itb.restore_ManzanoMiquel\cat.itb.restore_ManzanoMiquel\bin\Debug\net9.0\cat.itb.restore_ManzanoMiquel.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>
