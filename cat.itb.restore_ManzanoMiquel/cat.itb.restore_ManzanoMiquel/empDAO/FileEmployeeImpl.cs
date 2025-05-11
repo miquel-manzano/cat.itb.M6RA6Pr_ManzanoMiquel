@@ -10,62 +10,66 @@ namespace cat.itb.restore_ManzanoMiquel.empDAO
 {
     public class FileEmployeeImpl : EmployeeDAO
     {
+        private const string FilePath = "../../../../files/employees.json";
+
         public void DeleteAll()
         {
-            throw new System.NotImplementedException();
+            if (File.Exists(FilePath))
+                File.Delete(FilePath);
         }
 
         public void InsertAll(List<Employee> emps)
         {
-            FileInfo file = new FileInfo("../../../../files/employees.json");
-            StreamWriter sw = file.CreateText();
-            try
-            {
-                foreach (var emp in emps)
-                    sw.WriteLine(JsonConvert.SerializeObject(emp));
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("\nSuccesful inserts in file departments.json");
-            }
-            catch
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("\nInserts in departments.json couldn't be executed");
-            }
-            sw.Close();
-            Console.ResetColor();
+            string json = JsonConvert.SerializeObject(emps, Formatting.Indented);
+            File.WriteAllText(FilePath, json);
         }
 
         public List<Employee> SelectAll()
         {
-            FileInfo file = new FileInfo("../../../../files/employees.json");
-            StreamReader sr = file.OpenText();
-            string emps;
-            List<Employee> list = new List<Employee>();
-            while ((emps = sr.ReadLine()) != null)
-                list.Add(JsonConvert.DeserializeObject<Employee>(emps));
-            sr.Close();
+            if (!File.Exists(FilePath))
+                return new List<Employee>();
 
-            return list;
+            string json = File.ReadAllText(FilePath);
+            return JsonConvert.DeserializeObject<List<Employee>>(json);
         }
 
         public Employee Select(int empId)
         {
-            throw new System.NotImplementedException();
+            var employees = SelectAll();
+            return employees.Find(e => e._id == empId);
         }
 
         public bool Insert(Employee emp)
         {
-            throw new System.NotImplementedException();
+            var employees = SelectAll();
+            employees.Add(emp);
+            InsertAll(employees);
+            return true;
         }
 
         public bool Delete(int empId)
         {
-            throw new System.NotImplementedException();
+            var employees = SelectAll();
+            int removed = employees.RemoveAll(e => e._id == empId);
+            if (removed > 0)
+            {
+                InsertAll(employees);
+                return true;
+            }
+            return false;
         }
 
         public bool Update(Employee emp)
         {
-            throw new System.NotImplementedException();
+            var employees = SelectAll();
+            int index = employees.FindIndex(e => e._id == emp._id);
+            if (index >= 0)
+            {
+                employees[index] = emp;
+                InsertAll(employees);
+                return true;
+            }
+            return false;
         }
     }
 }

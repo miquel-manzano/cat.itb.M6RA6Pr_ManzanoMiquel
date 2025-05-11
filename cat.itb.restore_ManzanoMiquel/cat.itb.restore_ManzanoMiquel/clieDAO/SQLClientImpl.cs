@@ -11,227 +11,238 @@ namespace cat.itb.restore_ManzanoMiquel.clieDAO
 {
     public class SQLClientImpl : ClientDAO
     {
-        private NpgsqlConnection conn;
-
         public void DeleteAll()
         {
-            SQLConnection db = new SQLConnection();
-            conn = db.GetConnection();
-
-            NpgsqlCommand cmd = new NpgsqlCommand("DELETE FROM clients", conn);
-
-            try
+            using (var conn = new SQLConnection().GetConnection())
             {
+                var cmd = new NpgsqlCommand("DELETE FROM clients", conn);
                 cmd.ExecuteNonQuery();
-
-                Console.WriteLine("Clients deleted");
             }
-            catch
-            {
-                Console.WriteLine("Couldn't delete Clients");
-
-            }
-
-            conn.Close();
-
         }
 
-        public void InsertAll(List<Client> clies)
+        public void InsertAll(List<Client> clients)
         {
             DeleteAll();
-            SQLConnection db = new SQLConnection();
-            conn = db.GetConnection();
-
-            NpgsqlCommand cmd = new NpgsqlCommand("INSERT INTO clients VALUES (@_id, @Name, @Address, @City, @St, @Zipcode, @Area, @Phone, @Empid, @Credit, @Comments)", conn);
-
-            foreach (var clie in clies)
+            using (var conn = new SQLConnection().GetConnection())
+            using (var transaction = conn.BeginTransaction())
             {
-                cmd.Parameters.AddWithValue("depno", clie._id);
-                cmd.Parameters.AddWithValue("nom", clie.Name);
-                cmd.Parameters.AddWithValue("loc", clie.Address);
-                cmd.Parameters.AddWithValue("loc", clie.City);
-                cmd.Parameters.AddWithValue("loc", clie.St);
-                cmd.Parameters.AddWithValue("loc", clie.Zipcode);
-                cmd.Parameters.AddWithValue("loc", clie.Area);
-                cmd.Parameters.AddWithValue("loc", clie.Phone);
-                cmd.Parameters.AddWithValue("loc", clie.Empid);
-                cmd.Parameters.AddWithValue("loc", clie.Credit);
-                cmd.Parameters.AddWithValue("loc", clie.Comments);
-                cmd.Prepare();
                 try
                 {
-                    cmd.ExecuteNonQuery();
+                    foreach (var client in clients)
+                    {
+                        var cmd = new NpgsqlCommand(
+                            "INSERT INTO clients VALUES (@id, @name, @address, @city, @st, @zipcode, " +
+                            "@area, @phone, @empid, @credit, @comments)", conn);
 
-                    Console.WriteLine("Client with Id {0} and Name {1} added",
-                        clie._id, clie.Name);
+                        cmd.Parameters.AddWithValue("id", client._id);
+                        cmd.Parameters.AddWithValue("name", client.Name);
+                        cmd.Parameters.AddWithValue("address", client.Address);
+                        cmd.Parameters.AddWithValue("city", client.City);
+                        cmd.Parameters.AddWithValue("st", client.St);
+                        cmd.Parameters.AddWithValue("zipcode", client.Zipcode);
+                        cmd.Parameters.AddWithValue("area", client.Area);
+                        cmd.Parameters.AddWithValue("phone", client.Phone);
+                        cmd.Parameters.AddWithValue("empid", client.Empid);
+                        cmd.Parameters.AddWithValue("credit", client.Credit);
+                        cmd.Parameters.AddWithValue("comments", (object)client.Comments ?? DBNull.Value);
+
+                        cmd.ExecuteNonQuery();
+                    }
+                    transaction.Commit();
                 }
                 catch
                 {
-                    Console.WriteLine("Couldn't add Client with Id {0}", clie._id);
+                    transaction.Rollback();
+                    throw;
                 }
-
-                cmd.Parameters.Clear();
             }
-
-            conn.Close();
         }
 
         public List<Client> SelectAll()
         {
-            SQLConnection db = new SQLConnection();
-            conn = db.GetConnection();
-
-            var cmd = new NpgsqlCommand("SELECT * FROM clients", conn);
-            NpgsqlDataReader dr = cmd.ExecuteReader();
-
-            List<Client> clies = new List<Client>();
-
-            while (dr.Read())
+            var clients = new List<Client>();
+            using (var conn = new SQLConnection().GetConnection())
             {
-                Client clie = new Client();
-                clie._id = dr.GetInt32(0);
-                clie.Name = dr.GetString(1);
-                clie.Address = dr.GetString(2);
-                clie.City = dr.GetString(3);
-                clie.St = dr.GetString(4);
-                clie.Zipcode = dr.GetString(5);
-                clie.Area = dr.GetInt32(6);
-                clie.Phone = dr.GetString(7);
-                clie.Empid = dr.GetInt32(8);
-                clie.Credit = dr.GetDecimal(9);
-                clie.Comments = dr.GetString(10);
-
-                clies.Add(clie);
+                var cmd = new NpgsqlCommand("SELECT * FROM clients", conn);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        clients.Add(new Client
+                        {
+                            _id = reader.GetInt32(0),
+                            Name = reader.GetString(1),
+                            Address = reader.GetString(2),
+                            City = reader.GetString(3),
+                            St = reader.GetString(4),
+                            Zipcode = reader.GetString(5),
+                            Area = reader.GetInt32(6),
+                            Phone = reader.GetString(7),
+                            Empid = reader.GetInt32(8),
+                            Credit = reader.GetDecimal(9),
+                            Comments = reader.IsDBNull(10) ? null : reader.GetString(10)
+                        });
+                    }
+                }
             }
-
-            conn.Close();
-            return clies;
+            return clients;
         }
 
-        public Client Select(int clieId)
+        public Client Select(int clientId)
         {
-
-            SQLConnection db = new SQLConnection();
-            conn = db.GetConnection();
-
-            NpgsqlCommand cmd = new NpgsqlCommand("SELECT * FROM clients WHERE _id =" + clieId, conn);
-            NpgsqlDataReader dr = cmd.ExecuteReader();
-            Client clie = new Client();
-
-            if (dr.Read())
+            using (var conn = new SQLConnection().GetConnection())
             {
-                clie._id = dr.GetInt32(0);
-                clie.Name = dr.GetString(1);
-                clie.Address = dr.GetString(2);
-                clie.City = dr.GetString(3);
-                clie.St = dr.GetString(4);
-                clie.Zipcode = dr.GetString(5);
-                clie.Area = dr.GetInt32(6);
-                clie.Phone = dr.GetString(7);
-                clie.Empid = dr.GetInt32(8);
-                clie.Credit = dr.GetDecimal(9);
-                clie.Comments = dr.GetString(10);
-            }
-            else
-            {
-                clie = null;
+                var cmd = new NpgsqlCommand("SELECT * FROM clients WHERE _id = @id", conn);
+                cmd.Parameters.AddWithValue("id", clientId);
 
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        return new Client
+                        {
+                            _id = reader.GetInt32(0),
+                            Name = reader.GetString(1),
+                            Address = reader.GetString(2),
+                            City = reader.GetString(3),
+                            St = reader.GetString(4),
+                            Zipcode = reader.GetString(5),
+                            Area = reader.GetInt32(6),
+                            Phone = reader.GetString(7),
+                            Empid = reader.GetInt32(8),
+                            Credit = reader.GetDecimal(9),
+                            Comments = reader.IsDBNull(10) ? null : reader.GetString(10)
+                        };
+                    }
+                }
             }
-            conn.Close();
-            return clie;
+            return null;
         }
 
-        public Boolean Insert(Client clie)
+        public bool Insert(Client client)
         {
-
-            SQLConnection db = new SQLConnection();
-            conn = db.GetConnection();
-
-            NpgsqlCommand cmd = new NpgsqlCommand("INSERT INTO clients VALUES (@_id, @Name, @Address, @City, @St, @Zipcode, @Area, @Phone, @Empid, @Credit, @Comments)", conn);
-
-            Boolean bol;
-            cmd.Parameters.AddWithValue("depno", clie._id);
-            cmd.Parameters.AddWithValue("nom", clie.Name);
-            cmd.Parameters.AddWithValue("loc", clie.Address);
-            cmd.Parameters.AddWithValue("loc", clie.City);
-            cmd.Parameters.AddWithValue("loc", clie.St);
-            cmd.Parameters.AddWithValue("loc", clie.Zipcode);
-            cmd.Parameters.AddWithValue("loc", clie.Area);
-            cmd.Parameters.AddWithValue("loc", clie.Phone);
-            cmd.Parameters.AddWithValue("loc", clie.Empid);
-            cmd.Parameters.AddWithValue("loc", clie.Credit);
-            cmd.Parameters.AddWithValue("loc", clie.Comments);
-            cmd.Prepare();
-            try
+            using (var conn = new SQLConnection().GetConnection())
             {
-                cmd.ExecuteNonQuery();
-                bol = true;
-                Console.WriteLine("Cient with Id {0} and Name {1} added",
-                    clie._id, clie.Name);
-            }
-            catch
-            {
-                bol = false;
-                Console.WriteLine("Couldn't add Client with Id {0}", clie._id);
-            }
+                var cmd = new NpgsqlCommand(
+                    "INSERT INTO clients VALUES (@id, @name, @address, @city, @st, @zipcode, " +
+                    "@area, @phone, @empid, @credit, @comments)", conn);
 
-            conn.Close();
-            return bol;
+                cmd.Parameters.AddWithValue("id", client._id);
+                cmd.Parameters.AddWithValue("name", client.Name);
+                cmd.Parameters.AddWithValue("address", client.Address);
+                cmd.Parameters.AddWithValue("city", client.City);
+                cmd.Parameters.AddWithValue("st", client.St);
+                cmd.Parameters.AddWithValue("zipcode", client.Zipcode);
+                cmd.Parameters.AddWithValue("area", client.Area);
+                cmd.Parameters.AddWithValue("phone", client.Phone);
+                cmd.Parameters.AddWithValue("empid", client.Empid);
+                cmd.Parameters.AddWithValue("credit", client.Credit);
+                cmd.Parameters.AddWithValue("comments", (object)client.Comments ?? DBNull.Value);
+
+                return cmd.ExecuteNonQuery() > 0;
+            }
         }
 
-        public Boolean Delete(int clieId)
+        public bool Delete(int clientId)
         {
-
-            SQLConnection db = new SQLConnection();
-            conn = db.GetConnection();
-            Boolean bol;
-
-            NpgsqlCommand cmd = new NpgsqlCommand("DELETE FROM clients WHERE _id =" + clieId, conn);
-
-            try
+            using (var conn = new SQLConnection().GetConnection())
             {
-                cmd.ExecuteNonQuery();
-                bol = true;
-                Console.WriteLine("Client with Id {0} deleted",
-                   clieId);
+                var cmd = new NpgsqlCommand("DELETE FROM clients WHERE _id = @id", conn);
+                cmd.Parameters.AddWithValue("id", clientId);
+                return cmd.ExecuteNonQuery() > 0;
             }
-            catch
-            {
-                Console.WriteLine("Couldn't delete Client with Id {0}", clieId);
-                bol = false;
-            }
-
-            conn.Close();
-            return bol;
         }
 
-        public Boolean Update(Client clie)
-        {/*
-            SQLConnection db = new SQLConnection();
-            conn = db.GetConnection();
-            NpgsqlCommand cmd = new NpgsqlCommand("UPDATE clients SET name = @nom, loc = @loc  WHERE _id = @depId", conn);
-            Boolean bol;
-
-            cmd.Parameters.AddWithValue("nom", clie.Name);
-            cmd.Parameters.AddWithValue("loc", clie.Loc);
-            cmd.Parameters.AddWithValue("depId", clie._id);
-            cmd.Prepare();
-            try
+        public bool Update(Client client)
+        {
+            using (var conn = new SQLConnection().GetConnection())
             {
-                cmd.ExecuteNonQuery();
-                bol = true;
-                Console.WriteLine("Department with ID {0} updated", clie._id);
+                var cmd = new NpgsqlCommand(
+                    "UPDATE clients SET name = @name, address = @address, city = @city, " +
+                    "st = @st, zipcode = @zipcode, area = @area, phone = @phone, " +
+                    "empid = @empid, credit = @credit, comments = @comments " +
+                    "WHERE _id = @id", conn);
+
+                cmd.Parameters.AddWithValue("name", client.Name);
+                cmd.Parameters.AddWithValue("address", client.Address);
+                cmd.Parameters.AddWithValue("city", client.City);
+                cmd.Parameters.AddWithValue("st", client.St);
+                cmd.Parameters.AddWithValue("zipcode", client.Zipcode);
+                cmd.Parameters.AddWithValue("area", client.Area);
+                cmd.Parameters.AddWithValue("phone", client.Phone);
+                cmd.Parameters.AddWithValue("empid", client.Empid);
+                cmd.Parameters.AddWithValue("credit", client.Credit);
+                cmd.Parameters.AddWithValue("comments", (object)client.Comments ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("id", client._id);
+
+                return cmd.ExecuteNonQuery() > 0;
             }
-            catch
+        }
+
+        public List<Client> SelectByEmpId(int empId)
+        {
+            var clients = new List<Client>();
+            using (var conn = new SQLConnection().GetConnection())
             {
-                bol = false;
-                Console.WriteLine("Couldn't update Department {0}", clie.Name);
+                var cmd = new NpgsqlCommand("SELECT * FROM clients WHERE empid = @empid", conn);
+                cmd.Parameters.AddWithValue("empid", empId);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        clients.Add(new Client
+                        {
+                            _id = reader.GetInt32(0),
+                            Name = reader.GetString(1),
+                            Address = reader.GetString(2),
+                            City = reader.GetString(3),
+                            St = reader.GetString(4),
+                            Zipcode = reader.GetString(5),
+                            Area = reader.GetInt32(6),
+                            Phone = reader.GetString(7),
+                            Empid = empId,
+                            Credit = reader.GetDecimal(9),
+                            Comments = reader.IsDBNull(10) ? null : reader.GetString(10)
+                        });
+                    }
+                }
             }
+            return clients;
+        }
 
+        public List<Client> SelectByEmpSurname(string surname)
+        {
+            var clients = new List<Client>();
+            using (var conn = new SQLConnection().GetConnection())
+            {
+                var cmd = new NpgsqlCommand(
+                    "SELECT c.* FROM clients c JOIN employees e ON c.empid = e._id " +
+                    "WHERE e.surname = @surname", conn);
+                cmd.Parameters.AddWithValue("surname", surname);
 
-            conn.Close();
-            return bol;*/
-            return false;
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        clients.Add(new Client
+                        {
+                            _id = reader.GetInt32(0),
+                            Name = reader.GetString(1),
+                            Address = reader.GetString(2),
+                            City = reader.GetString(3),
+                            St = reader.GetString(4),
+                            Zipcode = reader.GetString(5),
+                            Area = reader.GetInt32(6),
+                            Phone = reader.GetString(7),
+                            Empid = reader.GetInt32(8),
+                            Credit = reader.GetDecimal(9),
+                            Comments = reader.IsDBNull(10) ? null : reader.GetString(10)
+                        });
+                    }
+                }
+            }
+            return clients;
         }
     }
 }

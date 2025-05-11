@@ -4,11 +4,13 @@ namespace cat.itb.restore_ManzanoMiquel.clieDAO
     public interface ClientDAO
     {
         void DeleteAll();
-        void InsertAll(List<Client> clies);
+        void InsertAll(List<Client> clients);
         List<Client> SelectAll();
-        Client Select(int clieId);
-        Boolean Insert(Client clie);
-        Boolean Delete(int clieId);
-        Boolean Update(Client clie);
+        Client Select(int clientId);
+        bool Insert(Client client);
+        bool Delete(int clientId);
+        bool Update(Client client);
+        List<Client> SelectByEmpId(int empId);
+        List<Client> SelectByEmpSurname(string surname);
     }
 }

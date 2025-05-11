@@ -10,62 +10,77 @@ namespace cat.itb.restore_ManzanoMiquel.clieDAO
 {
     public class FileClientImpl : ClientDAO
     {
+        private const string FilePath = "../../../../files/clients.json";
+
         public void DeleteAll()
         {
-            throw new System.NotImplementedException();
+            if (File.Exists(FilePath))
+                File.Delete(FilePath);
         }
 
-        public void InsertAll(List<Client> clies)
+        public void InsertAll(List<Client> clients)
         {
-            FileInfo file = new FileInfo("../../../../files/clients.json");
-            StreamWriter sw = file.CreateText();
-            try
-            {
-                foreach (var clie in clies)
-                    sw.WriteLine(JsonConvert.SerializeObject(clie));
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("\nSuccesful inserts in file departments.json");
-            }
-            catch
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("\nInserts in departments.json couldn't be executed");
-            }
-            sw.Close();
-            Console.ResetColor();
+            string json = JsonConvert.SerializeObject(clients, Formatting.Indented);
+            File.WriteAllText(FilePath, json);
         }
 
         public List<Client> SelectAll()
         {
-            FileInfo file = new FileInfo("../../../../files/clients.json");
-            StreamReader sr = file.OpenText();
-            string clies;
-            List<Client> list = new List<Client>();
-            while ((clies = sr.ReadLine()) != null)
-                list.Add(JsonConvert.DeserializeObject<Client>(clies));
-            sr.Close();
+            if (!File.Exists(FilePath))
+                return new List<Client>();
 
-            return list;
+            string json = File.ReadAllText(FilePath);
+            return JsonConvert.DeserializeObject<List<Client>>(json);
         }
 
-        public Client Select(int clieId)
+        public Client Select(int clientId)
         {
-            throw new System.NotImplementedException();
+            var clients = SelectAll();
+            return clients.Find(c => c._id == clientId);
         }
 
-        public bool Insert(Client clie)
+        public bool Insert(Client client)
         {
-            throw new System.NotImplementedException();
+            var clients = SelectAll();
+            clients.Add(client);
+            InsertAll(clients);
+            return true;
         }
 
-        public bool Delete(int clieId)
+        public bool Delete(int clientId)
         {
-            throw new System.NotImplementedException();
+            var clients = SelectAll();
+            int removed = clients.RemoveAll(c => c._id == clientId);
+            if (removed > 0)
+            {
+                InsertAll(clients);
+                return true;
+            }
+            return false;
         }
 
-        public bool Update(Client clie)
+        public bool Update(Client client)
         {
-            throw new System.NotImplementedException();
+            var clients = SelectAll();
+            int index = clients.FindIndex(c => c._id == client._id);
+            if (index >= 0)
+            {
+                clients[index] = client;
+                InsertAll(clients);
+                return true;
+            }
+            return false;
+        }
+
+        public List<Client> SelectByEmpId(int empId)
+        {
+            var clients = SelectAll();
+            return clients.FindAll(c => c.Empid == empId);
+        }
+
+        public List<Client> SelectByEmpSurname(string surname)
+        {
+            throw new System.NotImplementedException("Esta funcionalidad no está implementada para archivos");
         }
     }
 }
